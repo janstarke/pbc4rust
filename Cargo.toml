@@ -1,0 +1,13 @@
+[package]
+name = "pbc4rust"
+version = "0.1.0"
+authors = ["Jan Starke <jan.starke@t-systems.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rust-gmp = "0.5.0"
+num-traits = "0.2.14"
+duplicate = "0.2.9"
+rand = "0.8.3"

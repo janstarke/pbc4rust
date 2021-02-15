@@ -12,6 +12,12 @@ pub struct Z {
     data: Mpz,
 }
 
+impl Z {
+    pub fn new(d: Mpz) -> Z {
+        Z { data: d }
+    }
+}
+
 /// takes ownership of `op`
 impl From<Mpz> for Z {
     fn from(op: Mpz) -> Self {
@@ -44,64 +50,26 @@ impl Num for Z {
     }
 }
 
-impl ops::Add<Z> for Z {
+impl_op!(+ |lhs:Z, rhs: Z| -> Z {Z::new (&lhs.data + &rhs.data)});
+impl_op!(+ |lhs:&Z, rhs:&Z | -> Z {Z::new (&lhs.data + &rhs.data)});
+impl_op!(- |lhs:Z, rhs: Z| -> Z {Z::new (&lhs.data - &rhs.data)});
+impl_op!(- |lhs:&Z, rhs: &Z| -> Z {Z::new (&lhs.data - &rhs.data)});
+impl_op!(* |lhs:Z, rhs: Z| -> Z {Z::new (&lhs.data * &rhs.data)});
+impl_op!(* |lhs:&Z, rhs: &Z| -> Z {Z::new (&lhs.data * &rhs.data)});
+impl_op!(/ |lhs:Z, rhs: Z| -> Z {Z::new (&lhs.data / &rhs.data)});
+impl_op!(/ |lhs:&Z, rhs: &Z| -> Z {Z::new (&lhs.data / &rhs.data)});
+impl_op!(% |lhs:Z, rhs: Z| -> Z {Z::new (&lhs.data % &rhs.data)});
+impl_op!(% |lhs:&Z, rhs: &Z| -> Z {Z::new (&lhs.data % &rhs.data)});
+
+
+impl ops::Mul<i64> for Z {
     type Output = Z;
-    fn add(self, rhs: Z) -> Z { Z { data: &self.data + &rhs.data} }
+    fn mul(self, rhs: int_type) -> Self::Output { Z { data: &self.data * (rhs) } }
 }
 
-impl<'a, 'b> ops::Add<&'b Z> for &'a Z {
+impl ops::Mul<u64> for Z {
     type Output = Z;
-    fn add(self, rhs: &'b Z) -> Z { Z { data: &self.data + &rhs.data }}
-}
-
-impl ops::Sub<Z> for Z {
-    type Output = Z;
-    fn sub(self, rhs: Z) -> Z { Z { data: &self.data - &rhs.data} }
-
-}
-
-impl<'a> ops::Sub<&'a Z> for Z {
-    type Output = Z;
-    fn sub(self, rhs: &Z) -> Z { Z { data: &self.data - &rhs.data} }
-}
-
-impl ops::Mul<Z> for Z {
-    type Output = Z;
-    fn mul(self, rhs: Z) -> Self::Output { Z { data: &self.data * &rhs.data} }
-}
-
-impl<'a, 'b> ops::Mul<&'b Z> for &'a Z {
-    type Output = Z;
-    fn mul(self, rhs: &'b Z) -> Self::Output { Z { data: &self.data * &rhs.data} }
-}
-
-#[duplicate(int_type; [i32]; [i64]; )]
-impl ops::Mul<int_type> for Z {
-    type Output = Z;
-    fn mul(self, rhs: int_type) -> Self::Output { Z { data: &self.data * (rhs as i64) } }
-}
-
-#[duplicate(int_type; [u32]; [u64]; )]
-impl ops::Mul<int_type> for Z {
-    type Output = Z;
-    fn mul(self, rhs: int_type) -> Self::Output { Z { data: &self.data * (rhs as u64) } }
-}
-
-impl ops::Div<Z> for Z {
-    type Output = Z;
-
-    fn div(self, rhs: Z) -> Self::Output { Z { data: &self.data / &rhs.data} }
-}
-impl<'a> ops::Div<&'a Z> for Z {
-    type Output = Z;
-
-    fn div(self, rhs: &Z) -> Self::Output { Z { data: &self.data / &rhs.data} }
-}
-
-impl ops::Rem<Z> for Z {
-    type Output = Z;
-
-    fn rem(self, rhs: Z) -> Self::Output { Z { data: &self.data % &rhs.data} }
+    fn mul(self, rhs: int_type) -> Self::Output { Z { data: &self.data * (rhs) } }
 }
 
 impl One for Z {

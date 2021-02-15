@@ -6,15 +6,14 @@ use duplicate::duplicate;
 use crate::pbc::elements::traits::*;
 use std::ops::Neg;
 
-// Z ist just a wrapper for Mpz
 #[derive(Debug, Clone, PartialEq)]
 pub struct Z {
-    data: Mpz,
+    value: Mpz,
 }
 
 impl Z {
     pub fn new(d: Mpz) -> Z {
-        Z { data: d }
+        Z { value: d }
     }
 }
 
@@ -22,7 +21,7 @@ impl Z {
 impl From<Mpz> for Z {
     fn from(op: Mpz) -> Self {
         Self {
-            data: op
+            value: op
         }
     }
 }
@@ -31,7 +30,7 @@ impl From<Mpz> for Z {
 impl<'a> From<&'a Mpz> for Z {
     fn from(op: &'a Mpz) -> Self {
         Self {
-            data: op.clone()
+            value: op.clone()
         }
     }
 }
@@ -50,66 +49,82 @@ impl Num for Z {
     }
 }
 
-impl_op!(+ |lhs:Z, rhs: Z| -> Z {Z::new (&lhs.data + &rhs.data)});
-impl_op!(+ |lhs:&Z, rhs:&Z | -> Z {Z::new (&lhs.data + &rhs.data)});
-impl_op!(- |lhs:Z, rhs: Z| -> Z {Z::new (&lhs.data - &rhs.data)});
-impl_op!(- |lhs:&Z, rhs: &Z| -> Z {Z::new (&lhs.data - &rhs.data)});
-impl_op!(* |lhs:Z, rhs: Z| -> Z {Z::new (&lhs.data * &rhs.data)});
-impl_op!(* |lhs:&Z, rhs: &Z| -> Z {Z::new (&lhs.data * &rhs.data)});
-impl_op!(/ |lhs:Z, rhs: Z| -> Z {Z::new (&lhs.data / &rhs.data)});
-impl_op!(/ |lhs:&Z, rhs: &Z| -> Z {Z::new (&lhs.data / &rhs.data)});
-impl_op!(% |lhs:Z, rhs: Z| -> Z {Z::new (&lhs.data % &rhs.data)});
-impl_op!(% |lhs:&Z, rhs: &Z| -> Z {Z::new (&lhs.data % &rhs.data)});
-
-
-impl ops::Mul<i64> for Z {
-    type Output = Z;
-    fn mul(self, rhs: int_type) -> Self::Output { Z { data: &self.data * (rhs) } }
+macro_rules! add_operators {
+    ($($op:tt)+) => {
+        $(
+            impl_op!($op |lhs:Z, rhs: Z| -> Z {Z::new (&lhs.value $op &rhs.value)});
+            impl_op!($op |lhs:&Z, rhs:&Z | -> Z {Z::new (&lhs.value $op &rhs.value)});
+        )+
+    };
 }
-
-impl ops::Mul<u64> for Z {
-    type Output = Z;
-    fn mul(self, rhs: int_type) -> Self::Output { Z { data: &self.data * (rhs) } }
-}
+add_operators!(+-*/%);
+impl_op!(* |lhs:Z, rhs:i64 | -> Z {Z::new (&lhs.value * rhs)});
+impl_op!(* |lhs:Z, rhs:u64 | -> Z {Z::new (&lhs.value * rhs)});
 
 impl One for Z {
-    fn one() -> Self { Z { data: Mpz::one() } }
+    fn one() -> Self { Z { value: Mpz::one() } }
 }
 
 impl Zero for Z {
-    fn zero() -> Self { Z { data: Mpz::zero() } }
-    fn is_zero(&self) -> bool { self.data.is_zero() }
+    fn zero() -> Self { Z { value: Mpz::zero() } }
+    fn is_zero(&self) -> bool { self.value.is_zero() }
 }
 
 impl Neg for Z {
     type Output = Z;
-    fn neg(self) -> Self::Output { Z { data: self.data.neg() } }
+    fn neg(self) -> Self::Output { Z { value: self.value.neg() } }
 }
 
 impl Signed for Z {
-    fn abs(&self) -> Self { Z { data: self.data.abs() } }
+    fn abs(&self) -> Self { Z { value: self.value.abs() } }
 
     fn abs_sub(&self, rhs: &Self) -> Self {
-        let d = &self.data - &rhs.data;
+        let d = &self.value - &rhs.value;
         if d < Mpz::zero() {
             Self::zero()
         } else {
-            Z { data: d }
+            Z { value: d }
         }
     }
 
     fn signum(&self) -> Self {
-        match self.data.sign() {
+        match self.value.sign() {
             Sign::Negative => Self::from(-1),
             Sign::Zero => Self::zero(),
             Sign::Positive => Self::one()
         }
     }
 
-    fn is_positive(&self) -> bool { self.data.gt(&Mpz::zero()) }
-    fn is_negative(&self) -> bool { self.data.lt(&Mpz::zero()) }
+    fn is_positive(&self) -> bool { self.value.gt(&Mpz::zero()) }
+    fn is_negative(&self) -> bool { self.value.lt(&Mpz::zero()) }
 }
 
 impl Square for Z { fn square(&self) -> Self {self * self} }
-impl Double for Z { fn double(&self) -> Self {Self {data: &self.data << 1 } } }
-impl Halve  for Z { fn halve(&self)  -> Self {Self {data: &self.data >> 1 } } }
+impl Double for Z { fn double(&self) -> Self {Self {value: &self.value << 1 } } }
+impl Halve  for Z { fn halve(&self)  -> Self {Self {value: &self.value >> 1 } } }
+
+#[cfg(test)]
+mod tests {   use super::*;
+    use std::ops::*;
+    use crate::pbc::testlib::algebra::*;
+    use crate::test_one;
+    use crate::test_zero;
+    use crate::test_associativity;
+    use crate::test_commutativity;
+    use crate::test_double_and_halve;
+    use crate::test_distributivity;
+
+    fn a() -> Z {Z::from(VALUE_A)}
+    fn b() -> Z {Z::from(VALUE_B)}
+    fn c() -> Z {Z::from(VALUE_C)}
+    fn d() -> Z {Z::from(VALUE_D)}
+    
+    test_one!(Z, a());
+    test_zero!(Z, a());
+    test_double_and_halve!(Zr, a());
+    test_commutativity!(Zr, add, a(), b());
+    test_commutativity!(Zr, mul, a(), b());
+    test_associativity!(Zr, add, a(), b(), c());
+    test_associativity!(Zr, mul, a(), b(), c());
+    test_distributivity!(Zr, add, mul, d(), a(), b());
+}

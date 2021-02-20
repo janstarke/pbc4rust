@@ -99,9 +99,20 @@ impl Signed for Z {
     fn is_negative(&self) -> bool { self.value.lt(&Mpz::zero()) }
 }
 
-impl Square for Z { fn square(&self) -> Self {self * self} }
-impl Double for Z { fn double(&self) -> Self {Self {value: &self.value << 1 } } }
-impl Halve  for Z { fn halve(&self)  -> Self {Self {value: &self.value >> 1 } } }
+impl Square     for Z { fn square(&self) -> Self {self * self} }
+impl Double     for Z { fn double(&self) -> Self {Self {value: &self.value << 1 } } }
+impl Halve      for Z { fn halve(&self)  -> Self {Self {value: &self.value >> 1 } } }
+impl SquareRoot for Z {
+    type Item = Z;
+    fn sqrt(&self) -> Option<(Self,Self)> {
+        let s1 = self.value.sqrt();
+        let s2 = - &s1;
+        Some((
+            Self {value: s1},
+            Self {value: s2}
+        ))
+    }
+}
 
 #[cfg(test)]
 mod tests {   use super::*;
@@ -113,6 +124,7 @@ mod tests {   use super::*;
     use crate::test_commutativity;
     use crate::test_double_and_halve;
     use crate::test_distributivity;
+    use crate::test_square_and_sqrt;
 
     fn a() -> Z {Z::from(VALUE_A)}
     fn b() -> Z {Z::from(VALUE_B)}
@@ -121,10 +133,11 @@ mod tests {   use super::*;
     
     test_one!(Z, a());
     test_zero!(Z, a());
-    test_double_and_halve!(Zr, a());
-    test_commutativity!(Zr, add, a(), b());
-    test_commutativity!(Zr, mul, a(), b());
-    test_associativity!(Zr, add, a(), b(), c());
-    test_associativity!(Zr, mul, a(), b(), c());
-    test_distributivity!(Zr, add, mul, d(), a(), b());
+    test_double_and_halve!(Z, a());
+    test_square_and_sqrt!(Z, a());
+    test_commutativity!(Z, add, a(), b());
+    test_commutativity!(Z, mul, a(), b());
+    test_associativity!(Z, add, a(), b(), c());
+    test_associativity!(Z, mul, a(), b(), c());
+    test_distributivity!(Z, add, mul, d(), a(), b());
 }

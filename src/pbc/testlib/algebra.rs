@@ -111,3 +111,26 @@ macro_rules! test_distributivity {
         });
     }
 }
+
+#[macro_export]
+macro_rules! test_square_and_sqrt {
+    ($name: ident, $a: expr) => {
+        self::concat_idents!(test_name=test_square_and_sqrt_for_, $name {
+            #[allow(non_snake_case)]
+            #[test]
+            fn test_name() {
+                let a = $a;
+                let b = a.square();
+                if (! a.is_zero()) {
+                    assert_ne!(&a, &b);
+                }
+                
+                // keep in mind that sqrt always has two results (or None)
+                match b.sqrt() {
+                    Some((s1, s2)) => assert!(a == s1 || a == s2),
+                    None           => assert!(false)
+                }
+            }
+        });
+    }
+}

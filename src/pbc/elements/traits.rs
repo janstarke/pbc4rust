@@ -8,3 +8,8 @@ pub trait Double {
 pub trait Halve {
     fn halve(&self) -> Self;
 }
+
+pub trait SquareRoot {
+    type Item;
+    fn sqrt(&self) -> Option<(Self::Item, Self::Item)>;
+}

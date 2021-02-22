@@ -136,69 +136,61 @@ fn nqr(order: &Mpz) -> Zr {
 impl SquareRoot for Zr {
     type Item = Zr;
     fn sqrt(&self) -> Option<(Self,Self)> {
-        // Arguments n, p as described in Wikipedia (WP)
+        // for better readability
+        let n = &self.value;
+        let p = &self.order;
  
-        if ls(&self.value, &self.order) != Mpz::one() {
-            // value is quadratic non-residue module order,
-            // so there is no solution
+        if ! ls(n, p).is_one() {
             return None;
         }
         
-        // WP step 1, factor out powers two.
-        // variables Q, S named as at WP.
-        let mut q = &(self.order) - Mpz::one();
+        let mut q = p - 1;
         let mut s = Mpz::zero();
         while ((&q) & &Mpz::one()).is_zero() {
             s += 1;
             q >>= 1
         }
         
-        // WP step 1, direct solution
         if s.is_one() {
-            let exp = ((&self.order)+1)/Mpz::from(4);
-            let r1 = self.value.powm(&exp, &self.order);
-            let res2 = Zr{value: (&self.order) - (&r1), order: self.order.clone()};
-            let res1 = Zr{value: r1,              order: self.order.clone()};
+            let exp = (p+1)/4;
+            let r1 = self.value.powm(&exp, p);
+            let res2 = Zr{value: p - (&r1), order: (*p).clone()};
+            let res1 = Zr{value: r1,        order: (*p).clone()};
             return Some((res1, res2));
         }
         
-        // WP step 2, select z, assign c
         let mut z = Mpz::from(2);
-        while ls(&z, &self.order) != (&self.order)-&Mpz::one() {
+        while ls(&z, p) != p-1 {
             z += 1
         }
-        let mut c = z.powm(&q, &self.order);
+        let mut c = z.powm(&q, p);
         
-        // WP step 3, assign R, t, M
-        let mut r = self.value.powm(&(((&q)+1)/2), &self.order);
-        let mut t = self.value.powm(&q, &self.order);
+        let mut r = n.powm(&(((&q)+1)/2), p);
+        let mut t = n.powm(&q, p);
         let mut m = s;
         
-        // WP step 4, loop
         loop {
-            // WP step 4.1, termination condition
             if t.is_one() {
-                let res2 = Zr{value: &self.order - &r, order: self.order.clone()};
-                let res1 = Zr{value: r,                order: self.order.clone()};
+                let res2 = Zr{value: p - &r, order: (*p).clone()};
+                let res1 = Zr{value: r,      order: (*p).clone()};
                 return Some((res1, res2));
             }
             
-            // WP step 4.2, find lowest i...
             let mut i = Mpz::zero();
             let mut z = t.clone();
             let mut b = c.clone();
             while !z.is_one() && &i < &(&m - 1) {
-                z = (&z) * (&z) % &(self.order);
+                z = (&z) * (&z) % p;
                 i += 1;
             }
             let mut e = &m - &i - 1;
             while &e > &Mpz::zero() {
-                b = (&b) * (&b) % &(self.order);
+                b = (&b) * (&b) % p;
                 e -= 1;
             }
-            r = (&r) * (&b) % &self.order;
-            c = (&b) * (&b) % &self.order; // more convenient to compute c before t
-            t = (&t) * (&c) % &self.order;
+            r = (&r) * (&b) % p;
+            c = (&b) * (&b) % p;
+            t = (&t) * (&c) % p;
             m = i;
         }
     }

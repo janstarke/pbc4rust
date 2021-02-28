@@ -6,18 +6,85 @@ use num_traits::{One, Zero};
 use duplicate::duplicate;
 use crate::pbc::elements::traits::*;
 use std::ops::Neg;
+use std::rc::Rc;
+use super::ZrField;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Zr {
-    value: Mpz,
-    order: Mpz,
+    pub value: Mpz,
+    pub field: Option<Rc<ZrField>>,
 }
 
 impl Zr {
-
-    pub fn new (value: Mpz, order: Mpz) -> Zr {
-        Zr { value: value, order: order }
+    pub fn new(value: Mpz, field: Rc<ZrField>) -> Zr {
+        Zr {
+            value: value,
+            field: Some(field)
+        }
     }
+
+    fn common_field(z1: &Zr, z2: &Zr) -> Option<Rc<ZrField>> {
+        match (z1.field.as_ref(), z2.field.as_ref()) {
+            (None, None)                     => None,
+            (Some(v), None)                  => Some(v.clone()),
+            (None, Some(v))                  => Some(v.clone()),
+            (Some(v1), Some(v2)) if v1 == v2 => Some(v1.clone()),
+            (_, _)                           => None
+        }
+    }
+
+    pub fn assume_field(&self) -> Rc<ZrField> {
+        self.field.as_ref().expect("missing field").clone()
+    }
+
+    pub fn order(&self) -> Rc<Mpz> {
+        self.assume_field().order()
+    }
+
+    pub fn from_u64(value: u64, field: Rc<ZrField>) -> Zr {
+        Zr {
+            value: Mpz::from(value),
+            field: Some(field)
+        }
+    }
+
+    pub fn two(field: Rc<ZrField>) -> Zr {
+        Zr {
+            value: Mpz::from(2 as u32),
+            field: Some(field)
+        }
+    }
+
+    pub fn two_inverse(field: Rc<ZrField>) -> Zr {
+        let two: Mpz = Mpz::from(2 as u32);
+        match two.invert(field.order().as_ref()) {
+            Some(v) => Zr{value: v, field: Some(field)},
+            None    => panic!("unable to invert")
+        }
+    }
+}
+impl One for Zr { fn one() -> Self { Zr { value: Mpz::from(1), field: None} } }
+impl Zero for Zr {
+    fn zero() -> Self { Zr { value: Mpz::from(0), field: None} }
+    fn is_zero(&self) -> bool { self.value.is_zero() }
+}
+
+#[duplicate(src_type; [Mpz]; [u32]; [u64]; [i32]; [i64])]
+impl From<src_type> for Zr {
+    fn from(value: src_type) -> Self {
+        Zr { value: Mpz::from(value), field: None }
+    }
+}
+
+/*
+macro_rules! common_order {
+    ($me: expr, $other: expr) => {
+        Zr::common_field($me, $other).map(|v| v.order())
+    };
+}
+*/
+/*
+impl Zr {
 
     pub fn from_u64(value: u64, order: u64) -> Zr {
         Zr {
@@ -26,28 +93,6 @@ impl Zr {
         }
     }
 
-    pub fn common_order(me: &Zr, other: &Zr) -> Mpz {
-        // 0 should be no valid order,
-        // so we use this to mark special values, such as 0 or 1
-        match (&me.order, &other.order) {
-            (lhs, rhs) if lhs == rhs => lhs.clone(),
-            (lhs, rhs) if lhs == &Mpz::zero() => rhs.clone(),
-            (lhs, rhs) if rhs == &Mpz::zero() => lhs.clone(),
-            _ => panic!("values of different orders"),
-        }
-    }
-
-    fn two(order:&Mpz) -> Zr {
-        Zr::new(Mpz::from(2 as u32), order.clone())
-    }
-
-    fn two_inverse(order:&Mpz) -> Zr {
-        let two: Mpz = Mpz::from(2 as u32);
-        match two.invert(order) {
-            Some(v) => Zr::new(v, order.clone()),
-            None    => panic!("unable to invert")
-        }
-    }
 }
 
 #[duplicate(src_type; [Mpz]; [u32]; [u64];)]
@@ -56,67 +101,80 @@ impl From<src_type> for Zr {
         Zr { value: Mpz::from(value), order: Mpz::zero() }
     }
 }
+*/
 
 macro_rules! add_operators {
     ($($op:tt)+) => {
         $(
-            impl_op!($op |lhs:Zr, rhs: Zr| -> Zr {
-                let order = Zr::common_order(&lhs, &rhs);
-                Zr::new ((&lhs.value $op &rhs.value) % &order, order)
+            impl_op!($op |lhs:Zr, rhs:Zr | -> Zr {
+                let field = Zr::common_field(&lhs, &rhs).expect("unable to calculate");
+                Zr {
+                    value: (&lhs.value $op &rhs.value) % field.order().as_ref(),
+                    field: Some(field)
+                }
             });
+
             impl_op!($op |lhs:&Zr, rhs:&Zr | -> Zr {
-                let order = Zr::common_order(&lhs, &rhs);
-                Zr::new ((&lhs.value $op &rhs.value) % &order, order)
+                let field = Zr::common_field(lhs, rhs).expect("unable to calculate");
+                let order = field.order();
+                Zr {
+                    value: (&lhs.value $op &rhs.value) % field.order().as_ref(),
+                    field: Some(field)
+                }
             });
         )+
     };
 }
 add_operators!(+-*);
 
-impl_op!(* |lhs:Zr, rhs:u64 | -> Zr {
-    assert_ne!(lhs.order, Mpz::zero());
-    Zr::new ((&lhs.value * rhs) % &lhs.order, lhs.order.clone())
-});
-
-impl_op!(/ |lhs:Zr, rhs:Zr | -> Zr {
-    let order = Zr::common_order(&lhs, &rhs);
-    match rhs.value.invert(&order) {
-        Some(v) => Zr::new (&lhs.value * &v, order),
+impl_op!(/ |lhs:&Zr, rhs:&Zr | -> Zr {
+    let field = Zr::common_field(lhs, rhs).expect("unable to calculate");
+    match rhs.value.invert(field.order().as_ref()) {
+        Some(v) => Zr {value: &lhs.value * &v, field: Some(field)},
         None    => panic!("unable to invert")
     }
 });
 
-impl One for Zr { fn one() -> Self { Zr::from(1 as u32) } }
-impl Zero for Zr {
-    fn zero() -> Self { Zr::from(0 as u32) }
-    fn is_zero(&self) -> bool { self.value.is_zero() }
-}
+impl_op!(/ |lhs:Zr, rhs:Zr | -> Zr {
+    let field = Zr::common_field(&lhs, &rhs).expect("unable to calculate");
+    let order = field.order();
+    match rhs.value.invert(field.order().as_ref()) {
+        Some(v) => Zr {value: &lhs.value * &v, field: Some(field)},
+        None    => panic!("unable to invert")
+    }
+});
+
 
 impl Neg for Zr {
     type Output = Zr;
     fn neg(self) -> Self::Output {
         if self.value.is_zero() {
-            Zr::zero()
+            self
         } else {
-            Zr::new(self.value.neg(), self.order.clone())
+            Zr {
+                value: self.value.neg(),
+                field: self.field
+            }
         }
     }
 }
 
 impl Square for Zr { fn square(&self) -> Self {self * self } }
-impl Double for Zr { fn double(&self) -> Self {self * &Zr::two(&self.order) } }
-impl Halve  for Zr { fn halve(&self)  -> Self {self * &Zr::two_inverse(&self.order) } }
+impl Double for Zr { fn double(&self) -> Self {self * &Zr::two(self.assume_field()) } }
+impl Halve  for Zr { fn halve(&self)  -> Self {self * &Zr::two_inverse(self.assume_field()) } }
 
 // Legendre symbol, returns 1, 0, or -1 mod p
 fn ls(a: &Mpz, p: &Mpz) -> Mpz {
     let exp = (p-Mpz::one()) / Mpz::from(2 as u32);
     a.powm(&exp, p)
 }
-/*
-fn is_sqrt(value: &Mpz, order: &Mpz) -> bool {
-    value.is_zero() || ls(value, order) == Mpz::one()
-}
 
+impl Zr {
+    fn is_sqrt(&self) -> bool {
+        self.value.is_zero() || ls(&self.value, self.assume_field().order().as_ref()) == Mpz::one()
+    }
+}
+/*
 // get some quadratic nonresidue
 fn nqr(order: &Mpz) -> Zr {
     let mut rng1 = rand::thread_rng();
@@ -138,7 +196,9 @@ impl SquareRoot for Zr {
     fn sqrt(&self) -> Option<(Self,Self)> {
         // for better readability
         let n = &self.value;
-        let p = &self.order;
+        let field = self.assume_field();
+        let pr = self.order();
+        let p = pr.as_ref();
  
         if ! ls(n, p).is_one() {
             return None;
@@ -154,8 +214,8 @@ impl SquareRoot for Zr {
         if s.is_one() {
             let exp = (p+1)/4;
             let r1 = self.value.powm(&exp, p);
-            let res2 = Zr{value: p - (&r1), order: (*p).clone()};
-            let res1 = Zr{value: r1,        order: (*p).clone()};
+            let res2 = Zr{value: p - (&r1), field: Some(field.clone())};
+            let res1 = Zr{value: r1,        field: Some(field.clone())};
             return Some((res1, res2));
         }
         
@@ -171,8 +231,8 @@ impl SquareRoot for Zr {
         
         loop {
             if t.is_one() {
-                let res2 = Zr{value: p - &r, order: (*p).clone()};
-                let res1 = Zr{value: r,      order: (*p).clone()};
+                let res2 = Zr{value: p - &r, field: Some(field.clone())};
+                let res1 = Zr{value: r,      field: Some(field.clone())};
                 return Some((res1, res2));
             }
             
@@ -209,10 +269,12 @@ mod tests {
     use crate::test_distributivity;
     use crate::test_square_and_sqrt;
 
-    fn a() -> Zr {Zr::from_u64(VALUE_A, ORDER)}
-    fn b() -> Zr {Zr::from_u64(VALUE_B, ORDER)}
-    fn c() -> Zr {Zr::from_u64(VALUE_C, ORDER)}
-    fn d() -> Zr {Zr::from_u64(VALUE_D, ORDER)}
+    fn field() -> Rc<ZrField> { Rc::new(ZrField::new(Mpz::from(ORDER))) }
+
+    fn a() -> Zr {Zr::from_u64(VALUE_A, field())}
+    fn b() -> Zr {Zr::from_u64(VALUE_B, field())}
+    fn c() -> Zr {Zr::from_u64(VALUE_C, field())}
+    fn d() -> Zr {Zr::from_u64(VALUE_D, field())}
     
     test_one!(Zr, a());
     test_zero!(Zr, a());

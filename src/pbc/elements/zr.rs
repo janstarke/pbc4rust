@@ -1,6 +1,4 @@
-//use rand::*;
 use gmp::mpz::Mpz;
-//use gmp::rand::RandState;
 use std::ops;
 use num_traits::{One, Zero};
 use duplicate::duplicate;
@@ -48,20 +46,6 @@ impl Zr {
     pub fn from_u64(value: u64, field: Rc<ZrField>) -> Zr {
         Zr {
             value: Mpz::from(value),
-            field: Some(field)
-        }
-    }
-
-    pub fn two(field: Rc<ZrField>) -> Zr {
-        Zr {
-            value: Mpz::from(2 as u32),
-            field: Some(field)
-        }
-    }
-
-    pub fn two_inverse(field: Rc<ZrField>) -> Zr {
-        Zr {
-            value: field.inverse_of(&Mpz::from(2)),
             field: Some(field)
         }
     }
@@ -134,32 +118,16 @@ impl Neg for Zr {
 }
 
 impl Square for Zr { fn square(&self) -> Self {self * self } }
-impl Double for Zr { fn double(&self) -> Self {self * &Zr::two(self.assume_field()) } }
-impl Halve  for Zr { fn halve(&self)  -> Self {self * &Zr::two_inverse(self.assume_field()) } }
+impl Double for Zr { fn double(&self) -> Self {self * &ZrField::two(self.assume_field()) } }
+impl Halve  for Zr { fn halve(&self)  -> Self {self * &ZrField::two_inverse(self.assume_field()) } }
 
 impl Zr {
     pub fn is_sqrt(&self) -> bool {
         self.value.is_zero() || self.legendre() == Mpz::one()
     }
 }
-/*
-// get some quadratic nonresidue
-fn nqr(order: &Mpz) -> Zr {
-    let mut rng1 = rand::thread_rng();
-    let mut rng2 = RandState::new();
-    rng2.seed(Mpz::from(rng1.next_u64()));
-    loop {
-        let a = rng2.urandom(order);
-        if a > Mpz::one() {
-            if is_sqrt(&a, order) {
-                return Zr{value: a, order: order.clone()}
-            }
-        }
-    }
-}
-*/
-// Tonelli-Shanks algorithm
-impl SquareRoot for Zr {
+
+impl Sqrt for Zr {
     type Item = Zr;
     fn sqrt(&self) -> Option<(Self,Self)> {
         self.assume_field().sqrt(self)

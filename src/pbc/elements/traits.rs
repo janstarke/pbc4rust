@@ -9,7 +9,7 @@ pub trait Halve {
     fn halve(&self) -> Self;
 }
 
-pub trait SquareRoot {
+pub trait Sqrt {
     type Item;
     fn sqrt(&self) -> Option<(Self::Item, Self::Item)>;
 }

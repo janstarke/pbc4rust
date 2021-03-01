@@ -102,7 +102,7 @@ impl Signed for Z {
 impl Square     for Z { fn square(&self) -> Self {self * self} }
 impl Double     for Z { fn double(&self) -> Self {Self {value: &self.value << 1 } } }
 impl Halve      for Z { fn halve(&self)  -> Self {Self {value: &self.value >> 1 } } }
-impl SquareRoot for Z {
+impl Sqrt for Z {
     type Item = Z;
     fn sqrt(&self) -> Option<(Self,Self)> {
         let s1 = self.value.sqrt();

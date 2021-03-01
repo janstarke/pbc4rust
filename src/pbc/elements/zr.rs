@@ -148,19 +148,14 @@ mod tests {
     use crate::test_square_and_sqrt;
 
     fn field() -> Rc<ZrField> { Rc::new(ZrField::new(Mpz::from(ORDER))) }
-
-    fn a() -> Zr {Zr::from_u64(VALUE_A, field())}
-    fn b() -> Zr {Zr::from_u64(VALUE_B, field())}
-    fn c() -> Zr {Zr::from_u64(VALUE_C, field())}
-    fn d() -> Zr {Zr::from_u64(VALUE_D, field())}
     
-    test_one!(Zr, a());
-    test_zero!(Zr, a());
-    test_double_and_halve!(Zr, a());
-    test_square_and_sqrt!(Zr, a());
-    test_commutativity!(Zr, add, a(), b());
-    test_commutativity!(Zr, mul, a(), b());
-    test_associativity!(Zr, add, a(), b(), c());
-    test_associativity!(Zr, mul, a(), b(), c());
-    test_distributivity!(Zr, add, mul, d(), a(), b());
+    test_one!(Zr, ZrField, field());
+    test_zero!(Zr, ZrField, field());
+    test_double_and_halve!(Zr, ZrField, field());
+    test_square_and_sqrt!(Zr, ZrField, field());
+    test_commutativity!(Zr, add, ZrField, field());
+    test_commutativity!(Zr, mul, ZrField, field());
+    test_associativity!(Zr, add, ZrField, field());
+    test_associativity!(Zr, mul, ZrField, field());
+    test_distributivity!(Zr, add, mul, ZrField, field());
 }

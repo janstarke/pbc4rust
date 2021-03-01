@@ -8,7 +8,7 @@ use std::ops::Neg;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Z {
-    value: Mpz,
+    value: Mpz
 }
 
 impl Z {
@@ -115,7 +115,10 @@ impl Sqrt for Z {
 }
 
 #[cfg(test)]
-mod tests {   use super::*;
+mod tests {
+    use super::*;
+    use crate::pbc::elements::ZField;
+    use std::rc::Rc;
     use std::ops::*;
     use crate::pbc::testlib::algebra::*;
     use crate::test_one;
@@ -126,18 +129,15 @@ mod tests {   use super::*;
     use crate::test_distributivity;
     use crate::test_square_and_sqrt;
 
-    fn a() -> Z {Z::from(VALUE_A)}
-    fn b() -> Z {Z::from(VALUE_B)}
-    fn c() -> Z {Z::from(VALUE_C)}
-    fn d() -> Z {Z::from(VALUE_D)}
+    fn field() -> Rc<ZField> { Rc::new(ZField::new()) }
     
-    test_one!(Z, a());
-    test_zero!(Z, a());
-    test_double_and_halve!(Z, a());
-    test_square_and_sqrt!(Z, a());
-    test_commutativity!(Z, add, a(), b());
-    test_commutativity!(Z, mul, a(), b());
-    test_associativity!(Z, add, a(), b(), c());
-    test_associativity!(Z, mul, a(), b(), c());
-    test_distributivity!(Z, add, mul, d(), a(), b());
+    test_one!(Z, ZField, field());
+    test_zero!(Z, ZField, field());
+    test_double_and_halve!(Z, ZField, field());
+    test_square_and_sqrt!(Z, ZField, field());
+    test_commutativity!(Z, add, ZField, field());
+    test_commutativity!(Z, mul, ZField, field());
+    test_associativity!(Z, add, ZField, field());
+    test_associativity!(Z, mul, ZField, field());
+    test_distributivity!(Z, add, mul, ZField, field());
 }

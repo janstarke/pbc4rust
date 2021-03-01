@@ -1,13 +1,29 @@
 use gmp::mpz::Mpz;
 use super::Zr;
-use num_traits::{One, Zero};
+use num_traits::Zero;
 use std::rc::Rc;
 use gmp::rand::RandState;
 use rand::*;
+use super::traits::*;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ZrField {
     order: Mpz,
+}
+
+impl Field<Zr> for ZrField {
+    fn zero(field: Rc<ZrField>)   -> Zr { Zr::new(Mpz::from(0), field) }
+    fn one(field: Rc<ZrField>)    -> Zr { Zr::new(Mpz::from(1), field) }
+    fn random(field: Rc<ZrField>) -> Zr {
+        let mut rng1 = rand::thread_rng();
+        let mut rng2 = RandState::new();
+        rng2.seed(Mpz::from(rng1.next_u64()));
+        Zr::new(rng2.urandom(field.order()), field)
+    }
+}
+
+impl FiniteField<Zr> for ZrField {
+    fn order(&self) -> &Mpz { &self.order }
 }
 
 impl ZrField {
@@ -20,10 +36,6 @@ impl ZrField {
 
     pub fn two_inverse(&self)         -> Mpz { self.inverse_of(&Mpz::from(2)) }
 
-    pub fn order(&self) -> &Mpz {
-        &self.order
-    }
-
     pub fn inverse_of(&self, value: &Mpz) -> Mpz {
         value.invert(self.order()).expect("unable to invert")
     }
@@ -33,15 +45,8 @@ impl ZrField {
         value.powm(&exp, self.order())
     }
 
-    pub fn zero(field: Rc<ZrField>)   -> Zr { Zr::new(Mpz::from(0), field) }
-    pub fn one(field: Rc<ZrField>)    -> Zr { Zr::new(Mpz::from(1), field) }
     pub fn two(field: Rc<ZrField>)    -> Zr { Zr::new(Mpz::from(2), field) }
-    pub fn random(field: Rc<ZrField>) -> Zr {
-        let mut rng1 = rand::thread_rng();
-        let mut rng2 = RandState::new();
-        rng2.seed(Mpz::from(rng1.next_u64()));
-        Zr::new(rng2.urandom(field.order()), field)
-    }
+    
     pub fn nqr(field: Rc<ZrField>) -> Zr {
         loop {
             let res = ZrField::random(field.clone());

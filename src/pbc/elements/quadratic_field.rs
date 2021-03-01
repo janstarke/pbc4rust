@@ -1,9 +1,4 @@
 use gmp::mpz::Mpz;
-use super::Zr;
-use num_traits::{One, Zero};
-use std::rc::Rc;
-use gmp::rand::RandState;
-use rand::*;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct QuadraticField {

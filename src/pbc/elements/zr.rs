@@ -14,6 +14,54 @@ pub enum Zr {
     Other(Mpz,        Rc<ZrField>)
 }
 
+impl Element for Zr {
+    type FieldType = ZrField;
+
+    fn field(&self) -> Option<Rc<ZrField>> {
+        match self {
+            Zr::Zero(_, None)       => None,
+            Zr::One(_, None)        => None,
+            Zr::Zero(_, Some(f))    => Some(f.clone()),
+            Zr::One(_, Some(f))     => Some(f.clone()),
+            Zr::Other(_, f)         => Some(f.clone()),
+        }
+    }
+
+    fn double(&self) -> Self {
+        match self {
+            Zr::Zero(_, _)          => self.clone(),
+            Zr::One(e, Some(f))     => Zr::new(e * Mpz::from(2), f.clone()),
+            Zr::Other(e, f)         => Zr::new(e * Mpz::from(2), f.clone()),
+            _                       => panic!("unable to double"),
+        }
+    }
+
+    fn halve(&self) -> Self {
+        match self {
+            Zr::Zero(_, _)          => self.clone(),
+            Zr::One(e, Some(f))     => Zr::new(e * &ZrField::two_inverse(f.as_ref()), f.clone()),
+            Zr::Other(e, f)         => Zr::new(e * &ZrField::two_inverse(f.as_ref()), f.clone()),
+            _                       => panic!("unable to double"),
+        }
+    }
+
+    fn square(&self) -> Self {self * self }
+
+    fn is_sqrt(&self) -> bool {
+        match self {
+            Zr::Zero(_, _) => true,
+            _              => self.legendre() == Mpz::one(),
+        }
+    }
+
+    fn sqrt(&self) -> Option<(Self,Self)> {
+        match self.field() {
+            None        => None,
+            Some(f)     => Zr::sqrt(f, self.value()),
+        }
+    }
+}
+
 impl Zr {
     pub fn new(value: Mpz, field: Rc<ZrField>) -> Zr {
         let value = value % field.order();
@@ -31,16 +79,6 @@ impl Zr {
             Zr::Zero(v, _) => &v,
             Zr::One(v, _)  => &v,
             Zr::Other(v, _) => &v
-        }
-    }
-
-    pub fn field(&self) -> Option<Rc<ZrField>> {
-        match self {
-            Zr::Zero(_, None)       => None,
-            Zr::One(_, None)        => None,
-            Zr::Zero(_, Some(f))    => Some(f.clone()),
-            Zr::One(_, Some(f))     => Some(f.clone()),
-            Zr::Other(_, f)         => Some(f.clone()),
         }
     }
 
@@ -202,47 +240,6 @@ impl Neg for Zr {
             Zr::One(_, Some(f)) => Zr::new(f.order() - Mpz::one(), f.clone()),
             Zr::Other(e, f)     => Zr::new(f.order() - e, f),
             _                   => panic!("unable to negate"),
-        }
-    }
-}
-
-impl Square for Zr { fn square(&self) -> Self {self * self } }
-impl Double for Zr {
-    fn double(&self) -> Self {
-        match self {
-            Zr::Zero(_, _)          => self.clone(),
-            Zr::One(e, Some(f))     => Zr::new(e * Mpz::from(2), f.clone()),
-            Zr::Other(e, f)         => Zr::new(e * Mpz::from(2), f.clone()),
-            _                       => panic!("unable to double"),
-        }
-    }
-}
-impl Halve  for Zr {
-    fn halve(&self) -> Self {
-        match self {
-            Zr::Zero(_, _)          => self.clone(),
-            Zr::One(e, Some(f))     => Zr::new(e * &ZrField::two_inverse(f.as_ref()), f.clone()),
-            Zr::Other(e, f)         => Zr::new(e * &ZrField::two_inverse(f.as_ref()), f.clone()),
-            _                       => panic!("unable to double"),
-        }
-    }
-}
-
-impl Zr {
-    pub fn is_sqrt(&self) -> bool {
-        match self {
-            Zr::Zero(_, _) => true,
-            _              => self.legendre() == Mpz::one(),
-        }
-    }
-}
-
-impl Sqrt for Zr {
-    type Item = Zr;
-    fn sqrt(&self) -> Option<(Self,Self)> {
-        match self.field() {
-            None        => None,
-            Some(f)     => Zr::sqrt(f, self.value()),
         }
     }
 }

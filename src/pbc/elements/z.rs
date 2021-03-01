@@ -1,9 +1,11 @@
-use gmp::mpz::*;
-use std::ops;
-use num_traits::{Signed, Num, One, Zero};
 use gmp::sign::Sign;
+use gmp::mpz::{Mpz, ParseMpzError};
+use num_traits::*;
 use duplicate::duplicate;
 use crate::pbc::elements::traits::*;
+use super::ZField;
+use std::rc::Rc;
+use std::ops;
 use std::ops::Neg;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -99,11 +101,20 @@ impl Signed for Z {
     fn is_negative(&self) -> bool { self.value.lt(&Mpz::zero()) }
 }
 
-impl Square     for Z { fn square(&self) -> Self {self * self} }
-impl Double     for Z { fn double(&self) -> Self {Self {value: &self.value << 1 } } }
-impl Halve      for Z { fn halve(&self)  -> Self {Self {value: &self.value >> 1 } } }
-impl Sqrt for Z {
-    type Item = Z;
+impl Element for Z {
+    type FieldType = ZField;
+
+    fn field(&self) -> Option<Rc<ZField>> {
+        Some(Rc::new(ZField::new()))
+    }
+    fn square(&self) -> Self {self * self}
+    fn double(&self) -> Self {Self {value: &self.value << 1 } }
+    fn halve(&self)  -> Self {Self {value: &self.value >> 1 } }
+    fn is_sqrt(&self) -> bool {
+        let s = self.value.sqrt();
+        &s * &s == self.value
+    }
+
     fn sqrt(&self) -> Option<(Self,Self)> {
         let s1 = self.value.sqrt();
         let s2 = - &s1;

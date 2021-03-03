@@ -1,14 +1,21 @@
 use gmp::mpz::Mpz;
+use super::traits::{Field, Element};
+use std::rc::Rc;
+use std::marker::PhantomData;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct QuadraticField {
+pub struct QuadraticField<E: Element, F:Field<E>> {
     order: Mpz,
+    target_field: Rc<F>,
+    phantom: PhantomData<E>
 }
 
-impl QuadraticField {
-    pub fn new(order: Mpz) -> QuadraticField {
+impl<E, F> QuadraticField<E, F>
+where   E: Element,
+        F: Field<E> {
+    pub fn new(order: Mpz, target_field: Rc<F>) -> QuadraticField<E, F> {
         let field = QuadraticField {
-            order: order
+            order, target_field, phantom: PhantomData
         };
         field
     }

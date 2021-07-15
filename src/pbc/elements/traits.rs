@@ -2,9 +2,9 @@ use num_traits::{One, Zero};
 use std::rc::Rc;
 use gmp::mpz::Mpz;
 use std::ops::*;
+use std::fmt::Debug;
 
-
-pub trait Element: One + Zero + Clone + PartialEq + Add + Mul + Div + Sub + Neg {
+pub trait Element: Debug + Clone + PartialEq + Add<Output=Self> + Mul<Output=Self> + Div<Output=Self> + Sub<Output=Self> + Neg<Output=Self> {
     type FieldType;
     fn field(&self) -> Option<Rc<Self::FieldType>>;
 
@@ -19,7 +19,7 @@ pub trait Element: One + Zero + Clone + PartialEq + Add + Mul + Div + Sub + Neg 
     //fn powZn(&self, exp: &Zr) -> Self;
 }
 
-pub trait Field<E:Element> {
+pub trait Field<E:Element>: Debug + PartialEq {
     fn zero(field: Rc<Self>) -> E;
     fn one(field: Rc<Self>) -> E;
     fn random(field: Rc<Self>) -> E;

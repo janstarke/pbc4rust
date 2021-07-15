@@ -2,22 +2,47 @@ use gmp::mpz::Mpz;
 use super::traits::{Field, Element};
 use std::rc::Rc;
 use std::marker::PhantomData;
+use super::Quadratic;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct QuadraticField<E: Element, F:Field<E>> {
+pub struct QuadraticField<E, F>
+    where E: Element, F:Field<E> {
     order: Mpz,
     target_field: Rc<F>,
     phantom: PhantomData<E>
 }
 
 impl<E, F> QuadraticField<E, F>
-where   E: Element,
-        F: Field<E> {
+where E: Element, F:Field<E> {
     pub fn new(order: Mpz, target_field: Rc<F>) -> QuadraticField<E, F> {
         let field = QuadraticField {
             order, target_field, phantom: PhantomData
         };
         field
+    }
+
+    pub fn zero (field: Rc<QuadraticField<E, F> >) -> Quadratic<E, F> {
+        Quadratic::new(
+            F::zero(field.target_field.clone()),
+            F::zero(field.target_field.clone()),
+            field.clone()
+        )
+    }
+
+    pub fn one (field: Rc<QuadraticField<E, F> >) -> Quadratic<E, F> {
+        Quadratic::new(
+            F::one(field.target_field.clone()),
+            F::one(field.target_field.clone()),
+            field.clone()
+        )
+    }
+
+    pub fn random (field: Rc<QuadraticField<E, F> >) -> Quadratic<E, F> {
+        Quadratic::new(
+            F::random(field.target_field.clone()),
+            F::random(field.target_field.clone()),
+            field.clone()
+        )
     }
 /*
     pub fn zero(field: Rc<QuadraticField>)   -> Zr { Zr::new(Mpz::from(0), field) }

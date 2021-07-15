@@ -207,13 +207,8 @@ impl Zero for Zr {
 macro_rules! add_operators {
     ($($op:tt)+) => {
         $(
-            impl_op!($op |lhs:Zr, rhs:Zr | -> Zr {
+            impl_op_ex!($op |lhs:&Zr, rhs:&Zr | -> Zr {
                 let field = Zr::common_field(&lhs, &rhs).expect("unable to calculate");
-                Zr::new(lhs.value() $op rhs.value(), field)
-            });
-
-            impl_op!($op |lhs:&Zr, rhs:&Zr | -> Zr {
-                let field = Zr::common_field(lhs, rhs).expect("unable to calculate");
                 Zr::new(lhs.value() $op rhs.value(), field)
             });
         )+
@@ -221,13 +216,8 @@ macro_rules! add_operators {
 }
 add_operators!(+-*);
 
-impl_op!(/ |lhs:&Zr, rhs:&Zr | -> Zr {
+impl_op_ex!(/ |lhs:&Zr, rhs:&Zr | -> Zr {
     let field = Zr::common_field(lhs, rhs).expect("unable to calculate");
-    Zr::new(lhs.value() * &field.inverse_of(&rhs.value()), field)
-});
-
-impl_op!(/ |lhs:Zr, rhs:Zr | -> Zr {
-    let field = Zr::common_field(&lhs, &rhs).expect("unable to calculate");
     Zr::new(lhs.value() * &field.inverse_of(&rhs.value()), field)
 });
 

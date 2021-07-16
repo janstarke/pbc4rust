@@ -4,7 +4,7 @@ use gmp::mpz::Mpz;
 use std::ops::*;
 use std::fmt::Debug;
 
-pub trait Element: Debug + Clone + PartialEq + Add<Output=Self> + Mul<Output=Self> + Div<Output=Self> + Sub<Output=Self> + Neg<Output=Self> {
+pub trait Element: Debug + Clone + PartialEq + Add<Output=Self> + Mul<Output=Self> + Sub<Output=Self> + Neg<Output=Self> {
     type FieldType;
     fn field(&self) -> Option<Rc<Self::FieldType>>;
 

@@ -54,8 +54,7 @@ impl Num for Z {
 macro_rules! add_operators {
     ($($op:tt)+) => {
         $(
-            impl_op!($op |lhs:Z, rhs: Z| -> Z {Z::new (&lhs.value $op &rhs.value)});
-            impl_op!($op |lhs:&Z, rhs:&Z | -> Z {Z::new (&lhs.value $op &rhs.value)});
+            impl_op_ex!($op |lhs:&Z, rhs:&Z | -> Z {Z::new (&lhs.value $op &rhs.value)});
         )+
     };
 }

@@ -28,37 +28,105 @@ impl<E, F> Element for Quadratic<E, F> {
 }
 */
 
-impl<E, F> Add for Quadratic<E, F> 
-where   E: Element,
-        F: Field<E> {
-    type Output = Self;
-    fn add(self, rhs: Self) -> Self::Output {
-        assert_eq!(self.field, rhs.field);
-        Self::new(self.x + rhs.x, self.y + rhs.y, self.field )
-    }
+macro_rules! _parse_binary_op {
+    (+, $($t:tt)+) => (quadratic_op_internal!(Add, add, $($t)+););
+    (-, $($t:tt)+) => (quadratic_op_internal!(Sub, sub, $($t)+););
+    (*, $($t:tt)+) => (quadratic_op_internal!(Mul, mul, $($t)+););
+    (/, $($t:tt)+) => (quadratic_op_internal!(Div, div, $($t)+););
+}
+macro_rules! quadratic_op_internal {
+    ($ops_trait:ident, $ops_fn:ident, &$lhs_i:ident, &$rhs_i:ident, $body:block) => (
+        quadratic_op_borrowed_borrowed!($ops_trait, $ops_fn, $lhs_i, $rhs_i, $body);
+    );
+    ($ops_trait:ident, $ops_fn:ident, &$lhs_i:ident, $rhs_i:ident, $body:block) => (
+        quadratic_op_borrowed_owned!($ops_trait, $ops_fn, $lhs_i, $rhs_i, $body);
+    );
+    ($ops_trait:ident, $ops_fn:ident, $lhs_i:ident, &$rhs_i:ident, $body:block) => (
+        quadratic_op_owned_borrowed!($ops_trait, $ops_fn, $lhs_i, $rhs_i, $body);
+    );
+    ($ops_trait:ident, $ops_fn:ident, $lhs_i:ident, $rhs_i:ident, $body:block) => (
+        quadratic_op_owned_owned!($ops_trait, $ops_fn, $lhs_i, $rhs_i, $body);
+    );
 }
 
-impl<'a, 'b, E, F> Add<&'b Quadratic<E, F>> for &'a Quadratic<E, F> 
-where   E: Element,
-        for <'c> &'c E: Add<Output=E>,
-        F: Field<E>,
-        'a : 'b {
-    type Output = Quadratic<E, F>;
+macro_rules! quadratic_op_owned_owned {
+    ($ops_trait:ident, $ops_fn:ident, $lhs_i:ident, $rhs_i:ident, $body: block) => {
+        impl<E, F> $ops_trait for Quadratic<E, F>
+        where   E: Element,
+                for <'c> &'c E: $ops_trait<Output=E>,
+                F: Field<E> {
+            type Output = Quadratic<E, F>;
 
-    fn add(self, rhs: &'b Quadratic<E, F>) -> Self::Output {
-        assert_eq!(self.field, rhs.field);
-        let x = &self.x + &rhs.x;
-        let y = &self.y + &rhs.y;
-        Quadratic::new(x, y, self.field.clone())
-    }
+            fn $ops_fn (self, $rhs_i: Quadratic<E, F>) -> Self::Output {
+                let $lhs_i = self;
+                assert_eq!($lhs_i.field, $rhs_i.field);
+                $body
+            }
+        }
+    };
+}
+macro_rules! quadratic_op_owned_borrowed {
+    ($ops_trait:ident, $ops_fn:ident, $lhs_i:ident, $rhs_i:ident, $body: block) => {
+        impl<'b, E, F> $ops_trait<&'b Quadratic<E, F>> for Quadratic<E, F>
+        where   E: Element,
+                for <'c> &'c E: $ops_trait<Output=E>,
+                F: Field<E> {
+            type Output = Quadratic<E, F>;
+
+            fn $ops_fn (self, $rhs_i: &'b Quadratic<E, F>) -> Self::Output {
+                let $lhs_i = self;
+                assert_eq!($lhs_i.field, $rhs_i.field);
+                $body
+            }   
+        }
+    };
+}
+macro_rules! quadratic_op_borrowed_owned {
+    ($ops_trait:ident, $ops_fn:ident, $lhs_i:ident, $rhs_i:ident, $body: block) => {
+        impl<'a, E, F> $ops_trait<Quadratic<E, F>> for &'a Quadratic<E, F>
+        where   E: Element,
+                for <'c> &'c E: $ops_trait<Output=E>,
+                F: Field<E> {
+            type Output = Quadratic<E, F>;
+
+            fn $ops_fn (self, $rhs_i: Quadratic<E, F>) -> Self::Output {
+                let $lhs_i = self;
+                assert_eq!($lhs_i.field, $rhs_i.field);
+                $body
+            }   
+        }
+    };
+}
+macro_rules! quadratic_op_borrowed_borrowed {
+    ($ops_trait:ident, $ops_fn:ident, $lhs_i:ident, $rhs_i:ident, $body: block) => {
+        impl<'a, 'b, E, F> $ops_trait<&'b Quadratic<E, F>> for &'a Quadratic<E, F>
+        where   E: Element,
+                for <'c> &'c E: $ops_trait<Output=E>,
+                F: Field<E> {
+            type Output = Quadratic<E, F>;
+
+            fn $ops_fn (self, $rhs_i: &'b Quadratic<E, F>) -> Self::Output {
+                let $lhs_i = self;
+                assert_eq!($lhs_i.field, $rhs_i.field);
+                $body
+            }   
+        }
+    };
 }
 
-impl<E, F> Sub for Quadratic<E, F> 
-where   E: Element + Sub<Output = E>,
-        F: Field<E> {
-    type Output = Self;
-    fn sub(self, rhs: Self) -> Self::Output { Self::new(self.x - rhs.x, self.y - rhs.y, self.field )}
+macro_rules! quadratic_op {
+    ($op:tt |$lhs_i:ident , $rhs_i:ident| $body:block) => {
+        _parse_binary_op!($op,  lhs,  rhs, {|$lhs_i :  Quadratic<E, F>, $rhs_i :  Quadratic<E, F>| -> Quadratic<E, F> {$body}( lhs,  rhs)});
+        _parse_binary_op!($op,  lhs, &rhs, {|$lhs_i :  Quadratic<E, F>, $rhs_i : &Quadratic<E, F>| -> Quadratic<E, F> {$body}( lhs, &rhs)});
+        _parse_binary_op!($op, &lhs,  rhs, {|$lhs_i : &Quadratic<E, F>, $rhs_i :  Quadratic<E, F>| -> Quadratic<E, F> {$body}(&lhs,  rhs)});
+        _parse_binary_op!($op, &lhs, &rhs, {|$lhs_i : &Quadratic<E, F>, $rhs_i : &Quadratic<E, F>| -> Quadratic<E, F> {$body}(&lhs, &rhs)});
+    };
 }
+
+quadratic_op!(+ |lhs, rhs| {Quadratic::new(&lhs.x + &rhs.x, &lhs.y + &rhs.y, lhs.field.clone() )});
+quadratic_op!(- |lhs, rhs| {Quadratic::new(&lhs.x - &rhs.x, &lhs.y - &rhs.y, lhs.field.clone() )});
+quadratic_op!(* |lhs, rhs| {Quadratic::new(&lhs.x * &rhs.x, &lhs.y * &rhs.y, lhs.field.clone() )});
+
 
 #[cfg(test)]
 mod tests {
@@ -85,15 +153,15 @@ mod tests {
         Rc::new(QuadraticField::new(q_order.value().clone(), zr_field))
     }
     
-    //test_one!(TestedElement, TestedField, field());
+    test_one!(TestedElement, TestedField, field());
     test_zero!(TestedElement, TestedField, field());
     
-    //test_double_and_halve!(Zr, ZrField, field());
-    //test_square_and_sqrt!(Zr, ZrField, field());
+    //test_double_and_halve!(TestedElement, TestedField, field());
+    //test_square_and_sqrt!(TestedElement, TestedField, field());
     test_commutativity!(TestedElement, add, TestedField, field());
-    //test_commutativity!(Zr, mul, ZrField, field());
+    test_commutativity!(TestedElement, mul, TestedField, field());
     test_associativity!(TestedElement, add, TestedField, field());
-    //test_associativity!(Zr, mul, ZrField, field());
-    //test_distributivity!(Zr, add, mul, ZrField, field());
+    test_associativity!(TestedElement, mul, TestedField, field());
+    test_distributivity!(TestedElement, add, mul, TestedField, field());
     
 }

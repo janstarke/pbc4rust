@@ -4,14 +4,16 @@ pub const ORDER:u64 = 44497;
 
 #[macro_export]
 macro_rules! test_one {
-    ($elem_type: ident, $field_type: ident, $field:expr) => {
-        self::concat_idents!(test_name=test_one_for_, $elem_type {
+    ($elem_type: ident $(< $( $elem_param: ty),+ >)?,
+     $field_type: ident $(< $( $field_param: ty),+ >)?,
+     $field:expr) => {
+        self::concat_idents!(test_name=test_one_for_, $elem_type $(, $(_, $elem_param, )+ )? {
             #[allow(non_snake_case)]
             #[test]
             fn test_name() {
                 let field = $field;
                 let a = $field_type::random(field.clone());
-                let one:$elem_type = $field_type::one(field);
+                let one:$elem_type $(< $($elem_param,)+ >)? = $field_type::one(field);
                 assert_eq!(&a * &one, a);
                 assert_eq!(&one * &a, a);
             }
@@ -21,14 +23,16 @@ macro_rules! test_one {
 
 #[macro_export]
 macro_rules! test_zero {
-    ($elem_type: ident, $field_type: ident, $field:expr) => {
-        self::concat_idents!(test_name=test_zero_for_, $elem_type {
+    ($elem_type: ident $(< $( $elem_param: ty),+ >)?,
+    $field_type: ident $(< $( $field_param: ty),+ >)?,
+    $field:expr) => {
+        self::concat_idents!(test_name=test_zero_for_, $elem_type $(, $(_, $elem_param, )+ )? {
             #[allow(non_snake_case)]
             #[test]
             fn test_name() {
                 let field = $field;
                 let a = $field_type::random(field.clone());
-                let zero:$elem_type = $field_type::zero(field);
+                let zero:$elem_type $(< $($elem_param,)+ >)? = $field_type::zero(field);
                 assert_eq!(&a + &zero, a);
                 assert_eq!(&zero + &a, a);
             }
@@ -39,8 +43,11 @@ macro_rules! test_zero {
 
 #[macro_export]
 macro_rules! test_associativity {
-    ($elem_type: ident, $op: ident, $field_type: ident, $field:expr) => {
-        self::concat_idents!(test_name=test_, $op, _associativity_for_, $elem_type {
+    ($elem_type: ident $(< $( $elem_param: ty),+ >)?,
+    $op: ident,
+    $field_type: ident $(< $( $field_param: ty),+ >)?,
+    $field:expr) => {
+        self::concat_idents!(test_name=test_, $op, _associativity_for_, $elem_type $(, $(_, $elem_param, )+ )? {
             #[allow(non_snake_case)]
             #[test]
             fn test_name() {
@@ -58,8 +65,11 @@ macro_rules! test_associativity {
 
 #[macro_export]
 macro_rules! test_commutativity {
-    ($elem_type: ident, $op: ident, $field_type: ident, $field:expr) => {
-        self::concat_idents!(test_name=test_, $op, _commutativity_for_, $elem_type {
+    ($elem_type: ident $(< $( $elem_param: ty),+ >)?,
+    $op: ident,
+    $field_type: ident $(< $( $field_param: ty),+ >)?,
+    $field:expr) => {
+        self::concat_idents!(test_name=test_, $op, _commutativity_for_, $elem_type $(, $(_, $elem_param, )+ )? {
             #[allow(non_snake_case)]
             #[test]
             fn test_name() {
@@ -76,8 +86,10 @@ macro_rules! test_commutativity {
 
 #[macro_export]
 macro_rules! test_double_and_halve {
-    ($elem_type: ident, $field_type: ident, $field:expr) => {
-        self::concat_idents!(test_name=test_double_and_halve_for_, $elem_type {
+    ($elem_type: ident $(< $( $elem_param: ty),+ >)?,
+    $field_type: ident $(< $( $field_param: ty),+ >)?,
+    $field:expr) => {
+        self::concat_idents!(test_name=test_double_and_halve_for_, $elem_type $(, $(_, $elem_param, )+ )? {
             #[allow(non_snake_case)]
             #[test]
             fn test_name() {
@@ -97,8 +109,11 @@ macro_rules! test_double_and_halve {
 
 #[macro_export]
 macro_rules! test_distributivity {
-    ($elem_type: ident, $add: ident, $mul:ident, $field_type: ident, $field:expr) => {
-        self::concat_idents!(test_name=test_,$add,_and_,$mul,distributivity_for_, $elem_type {
+    ($elem_type: ident $(< $( $elem_param: ty),+ >)?,
+    $add: ident, $mul:ident, 
+    $field_type: ident $(< $( $field_param: ty),+ >)?,
+    $field: expr) => {
+        self::concat_idents!(test_name=test_,$add,_and_,$mul,_distributivity_for_, $elem_type $(, $(_, $elem_param, )+ )? {
             #[allow(non_snake_case)]
             #[test]
             fn test_name() {
@@ -116,8 +131,10 @@ macro_rules! test_distributivity {
 
 #[macro_export]
 macro_rules! test_square_and_sqrt {
-    ($elem_type: ident, $field_type: ident, $field:expr) => {
-        self::concat_idents!(test_name=test_square_and_sqrt_for_, $elem_type {
+    ($elem_type: ident $(< $( $elem_param: ty),+ >)?,
+    $field_type: ident $(< $( $field_param: ty),+ >)?,
+    $field:expr) => {
+        self::concat_idents!(test_name=test_square_and_sqrt_for_, $elem_type $(, $(_, $elem_param, )+ )? {
             #[allow(non_snake_case)]
             #[test]
             fn test_name() {

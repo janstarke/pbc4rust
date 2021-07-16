@@ -48,7 +48,6 @@ macro_rules! quadratic_op_internal {
         quadratic_op_owned_owned!($ops_trait, $ops_fn, $lhs_i, $rhs_i, $body);
     );
 }
-
 macro_rules! quadratic_op_owned_owned {
     ($ops_trait:ident, $ops_fn:ident, $lhs_i:ident, $rhs_i:ident, $body: block) => {
         impl<E, F> $ops_trait for Quadratic<E, F>
@@ -144,24 +143,22 @@ mod tests {
     use crate::test_distributivity;
     use crate::test_square_and_sqrt;
 
-    type TestedField = QuadraticField<Zr, ZrField>;
-    type TestedElement = Quadratic<Zr, ZrField>;
 
-    fn field() -> Rc<TestedField> {
+    fn field() -> Rc<QuadraticField<Zr, ZrField>> {
         let zr_field = Rc::new(ZrField::new(Mpz::from(ORDER)));
         let q_order = ZrField::nqr(zr_field.clone());
         Rc::new(QuadraticField::new(q_order.value().clone(), zr_field))
     }
     
-    test_one!(TestedElement, TestedField, field());
-    test_zero!(TestedElement, TestedField, field());
+    test_one!(Quadratic<Zr, ZrField>, QuadraticField<Zr, ZrField>, field());
+    test_zero!(Quadratic<Zr, ZrField>, QuadraticField<Zr, ZrField>, field());
     
-    //test_double_and_halve!(TestedElement, TestedField, field());
-    //test_square_and_sqrt!(TestedElement, TestedField, field());
-    test_commutativity!(TestedElement, add, TestedField, field());
-    test_commutativity!(TestedElement, mul, TestedField, field());
-    test_associativity!(TestedElement, add, TestedField, field());
-    test_associativity!(TestedElement, mul, TestedField, field());
-    test_distributivity!(TestedElement, add, mul, TestedField, field());
+    //test_double_and_halve!(Quadratic<Zr, ZrField>, QuadraticField<Zr, ZrField>, field());
+    //test_square_and_sqrt!(Quadratic<Zr, ZrField>, QuadraticField<Zr, ZrField>, field());
+    test_commutativity!(Quadratic<Zr, ZrField>, add, QuadraticField<Zr, ZrField>, field());
+    test_commutativity!(Quadratic<Zr, ZrField>, mul, QuadraticField<Zr, ZrField>, field());
+    test_associativity!(Quadratic<Zr, ZrField>, add, QuadraticField<Zr, ZrField>, field());
+    test_associativity!(Quadratic<Zr, ZrField>, mul, QuadraticField<Zr, ZrField>, field());
+    test_distributivity!(Quadratic<Zr, ZrField>, add, mul, QuadraticField<Zr, ZrField>, field());
     
 }

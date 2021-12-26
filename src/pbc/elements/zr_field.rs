@@ -1,6 +1,5 @@
 use gmp::mpz::Mpz;
 use super::Zr;
-use num_traits::Zero;
 use std::rc::Rc;
 use gmp::rand::RandState;
 use rand::*;
@@ -11,18 +10,28 @@ pub struct ZrField {
     order: Mpz,
 }
 
-impl Field<Zr> for ZrField {
-    fn zero(field: Rc<ZrField>)   -> Zr { Zr::new(Mpz::from(0), field) }
-    fn one(field: Rc<ZrField>)    -> Zr { Zr::new(Mpz::from(1), field) }
-    fn random(field: Rc<ZrField>) -> Zr {
+impl Field<Zr, AtomicElement> for ZrField {
+    fn random_element(self: Rc<Self>) -> Zr {
         let mut rng1 = rand::thread_rng();
         let mut rng2 = RandState::new();
         rng2.seed(Mpz::from(rng1.next_u64()));
-        Zr::new(rng2.urandom(field.order()), field)
+        Zr::new(rng2.urandom(self.order()), Rc::clone(&self))
     }
 }
 
-impl FiniteField<Zr> for ZrField {
+impl HasOne<Zr> for ZrField {
+    fn one_element(self: Rc<Self>) -> Zr {
+        Zr::new(Mpz::from(1), Rc::clone(&self))
+    }
+}
+
+impl HasZero<Zr> for ZrField {
+    fn zero_element(self: Rc<Self>) -> Zr {
+        Zr::new(Mpz::from(0), Rc::clone(&self))
+    }
+}
+
+impl FiniteField<Zr, AtomicElement> for ZrField {
     fn order(&self) -> &Mpz { &self.order }
 }
 
@@ -45,11 +54,11 @@ impl ZrField {
         value.powm(&exp, self.order())
     }
 
-    pub fn two(field: Rc<ZrField>)    -> Zr { Zr::new(Mpz::from(2), field) }
+    pub fn two(field: Rc<ZrField>)    -> Zr { Zr::new(Mpz::from(2), Rc::clone(&field)) }
     
     pub fn nqr(field: Rc<ZrField>) -> Zr {
         loop {
-            let res = ZrField::random(field.clone());
+            let res = ZrField::random_element(Rc::clone(&field));
             if ! res.is_zero() {
                 if ! res.is_sqrt() {
                     return res;

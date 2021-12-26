@@ -1,5 +1,4 @@
-use gmp::sign::Sign;
-use gmp::mpz::{Mpz, ParseMpzError};
+use gmp::mpz::{Mpz};
 use num_traits::*;
 use duplicate::duplicate;
 use crate::pbc::elements::traits::*;
@@ -10,12 +9,13 @@ use std::ops::Neg;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Z {
-    value: Mpz
+    value: Mpz,
+    field: Rc<ZField>
 }
 
 impl Z {
     pub fn new(d: Mpz) -> Z {
-        Z { value: d }
+        Z { value: d, field: Rc::new(ZField::new()) }
     }
 }
 
@@ -23,7 +23,8 @@ impl Z {
 impl From<Mpz> for Z {
     fn from(op: Mpz) -> Self {
         Self {
-            value: op
+            value: op,
+            field: Rc::new(ZField::new())
         }
     }
 }
@@ -32,14 +33,15 @@ impl From<Mpz> for Z {
 impl<'a> From<&'a Mpz> for Z {
     fn from(op: &'a Mpz) -> Self {
         Self {
-            value: op.clone()
+            value: op.clone(),
+            field: Rc::new(ZField::new())
         }
     }
 }
 
 #[duplicate(int_type; [i32]; [i64]; [u32]; [u64]; )]
 impl From<int_type> for Z { fn from(op: int_type) -> Self { Self::from(Mpz::from(op)) } }
-
+/*
 impl Num for Z {
     type FromStrRadixErr = ParseMpzError;
 
@@ -50,7 +52,7 @@ impl Num for Z {
         }
     }
 }
-
+*/
 macro_rules! add_operators {
     ($($op:tt)+) => {
         $(
@@ -62,20 +64,19 @@ add_operators!(+-*/%);
 impl_op!(* |lhs:Z, rhs:i64 | -> Z {Z::new (&lhs.value * rhs)});
 impl_op!(* |lhs:Z, rhs:u64 | -> Z {Z::new (&lhs.value * rhs)});
 
-impl One for Z {
-    fn one() -> Self { Z { value: Mpz::one() } }
+impl CanBeOne for Z {
+    fn is_one(&self) -> bool { self.value.is_one() }
 }
 
-impl Zero for Z {
-    fn zero() -> Self { Z { value: Mpz::zero() } }
+impl CanBeZero for Z {
     fn is_zero(&self) -> bool { self.value.is_zero() }
 }
 
 impl Neg for Z {
     type Output = Z;
-    fn neg(self) -> Self::Output { Z { value: self.value.neg() } }
+    fn neg(self) -> Self::Output { Self::from(self.value.neg()) }
 }
-
+/*
 impl Signed for Z {
     fn abs(&self) -> Self { Z { value: self.value.abs() } }
 
@@ -99,16 +100,16 @@ impl Signed for Z {
     fn is_positive(&self) -> bool { self.value.gt(&Mpz::zero()) }
     fn is_negative(&self) -> bool { self.value.lt(&Mpz::zero()) }
 }
-
-impl Element for Z {
+*/
+impl Element<AtomicElement> for Z {
     type FieldType = ZField;
 
-    fn field(&self) -> Option<Rc<ZField>> {
-        Some(Rc::new(ZField::new()))
+    fn field(&self) -> Rc<Self::FieldType> {
+        Rc::clone(&self.field)
     }
     fn square(&self) -> Self {self * self}
-    fn double(&self) -> Self {Self {value: &self.value << 1 } }
-    fn halve(&self)  -> Self {Self {value: &self.value >> 1 } }
+    fn double(&self) -> Self {Self::from(&self.value << 1) }
+    fn halve(&self)  -> Self {Self::from(&self.value >> 1) }
     fn is_sqrt(&self) -> bool {
         let s = self.value.sqrt();
         &s * &s == self.value
@@ -118,8 +119,8 @@ impl Element for Z {
         let s1 = self.value.sqrt();
         let s2 = - &s1;
         Some((
-            Self {value: s1},
-            Self {value: s2}
+            Self::from(s1),
+            Self::from(s2)
         ))
     }
 }

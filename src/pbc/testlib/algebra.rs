@@ -12,8 +12,8 @@ macro_rules! test_one {
             #[test]
             fn test_name() {
                 let field = $field;
-                let a = $field_type::random(field.clone());
-                let one:$elem_type $(< $($elem_param,)+ >)? = $field_type::one(field);
+                let a = $field_type::random_element(Rc::clone(&field));
+                let one:$elem_type $(< $($elem_param,)+ >)? = $field_type::one_element(field);
                 assert_eq!(&a * &one, a);
                 assert_eq!(&one * &a, a);
             }
@@ -31,8 +31,8 @@ macro_rules! test_zero {
             #[test]
             fn test_name() {
                 let field = $field;
-                let a = $field_type::random(field.clone());
-                let zero:$elem_type $(< $($elem_param,)+ >)? = $field_type::zero(field);
+                let a = $field_type::random_element(Rc::clone(&field));
+                let zero:$elem_type $(< $($elem_param,)+ >)? = $field_type::zero_element(field);
                 assert_eq!(&a + &zero, a);
                 assert_eq!(&zero + &a, a);
             }
@@ -52,9 +52,9 @@ macro_rules! test_associativity {
             #[test]
             fn test_name() {
                 let field = $field;
-                let a = $field_type::random(field.clone());
-                let b = $field_type::random(field.clone());
-                let c = $field_type::random(field.clone());
+                let a = $field_type::random_element(Rc::clone(&field));
+                let b = $field_type::random_element(Rc::clone(&field));
+                let c = $field_type::random_element(Rc::clone(&field));
                 let res1 = (&a).$op(&(&b).$op(&c));
                 let res2 = (&(&a).$op(&b)).$op(&c);
                 assert_eq!(res1, res2);
@@ -74,8 +74,8 @@ macro_rules! test_commutativity {
             #[test]
             fn test_name() {
                 let field = $field;
-                let a = $field_type::random(field.clone());
-                let b = $field_type::random(field);
+                let a = $field_type::random_element(Rc::clone(&field));
+                let b = $field_type::random_element(field);
                 let res1 = (&a).$op(&b);
                 let res2 = (&b).$op(&a);
                 assert_eq!(res1, res2);
@@ -94,7 +94,7 @@ macro_rules! test_double_and_halve {
             #[test]
             fn test_name() {
                 let field = $field;
-                let a = $field_type::random(field);
+                let a = $field_type::random_element(field);
                 let b = a.double();
                 if (! a.is_zero()) {
                     assert_ne!(&a, &b);
@@ -118,9 +118,9 @@ macro_rules! test_distributivity {
             #[test]
             fn test_name() {
                 let field = $field;
-                let a = $field_type::random(field.clone());
-                let b = $field_type::random(field.clone());
-                let c = $field_type::random(field);
+                let a = $field_type::random_element(Rc::clone(&field));
+                let b = $field_type::random_element(Rc::clone(&field));
+                let c = $field_type::random_element(field);
                 let res1 = (&a).$mul(&(&b).$add(&c));
                 let res2 = (&(&a).$mul(&b)).$add(&(&a).$mul(&c));
                 assert_eq!(res1, res2);
@@ -139,7 +139,7 @@ macro_rules! test_square_and_sqrt {
             #[test]
             fn test_name() {
                 let field = $field;
-                let a = $field_type::random(field);
+                let a = $field_type::random_element(field);
                 let b = a.square();
                 if (! a.is_zero()) {
                     assert_ne!(&a, &b);

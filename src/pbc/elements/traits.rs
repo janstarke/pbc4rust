@@ -1,12 +1,43 @@
-use num_traits::{One, Zero};
 use std::rc::Rc;
 use gmp::mpz::Mpz;
 use std::ops::*;
 use std::fmt::Debug;
 
-pub trait Element: Debug + Clone + PartialEq + Add<Output=Self> + Mul<Output=Self> + Sub<Output=Self> + Neg<Output=Self> {
+pub trait HasZero<E:CanBeZero> {
+    fn zero_element(self: Rc<Self>) -> E;
+}
+
+pub trait HasOne<E:CanBeOne> {
+    fn one_element(self: Rc<Self>) -> E;
+}
+
+pub trait CanBeZero {
+    fn is_zero(&self) -> bool;
+}
+
+pub trait CanBeOne {
+    fn is_one(&self) -> bool;
+}
+
+pub trait ElementType {}
+pub enum AtomicElement {}
+pub enum ComplexElement {}
+impl ElementType for AtomicElement {}
+impl ElementType for ComplexElement {}
+
+pub trait Element<E: ElementType>: 
+        Debug + 
+        Clone + 
+        PartialEq +
+        CanBeZero +
+        CanBeOne +
+        Add<Output=Self> + for<'a> Add<&'a Self, Output=Self> +
+        Mul<Output=Self> + for<'a> Mul<&'a Self, Output=Self> + 
+        Sub<Output=Self> + for<'a> Sub<&'a Self, Output=Self> + 
+        Neg<Output=Self>
+        {
     type FieldType;
-    fn field(&self) -> Option<Rc<Self::FieldType>>;
+    fn field(&self) -> Rc<Self::FieldType>;
 
     //fn inverse(&self) -> Self;
     fn square(&self) -> Self;
@@ -19,16 +50,14 @@ pub trait Element: Debug + Clone + PartialEq + Add<Output=Self> + Mul<Output=Sel
     //fn powZn(&self, exp: &Zr) -> Self;
 }
 
-pub trait Field<E:Element>: Debug + PartialEq {
-    fn zero(field: Rc<Self>) -> E;
-    fn one(field: Rc<Self>) -> E;
-    fn random(field: Rc<Self>) -> E;
+pub trait Field<E:Element<T>, T>: Debug + Clone + HasZero<E> + HasOne<E> + PartialEq where T: ElementType {
+    fn random_element(self: Rc<Self>) -> E;
 }
 
-pub trait FiniteField<E:Element> : Field<E> {
+pub trait FiniteField<E:Element<T>, T> : Field<E, T> where T: ElementType  {
     fn order(&self) -> &Mpz;
 }
 
-pub trait FieldOver<E:Element> : Field<E> {
+pub trait FieldOver<E:Element<T>, T> : Field<E, T> where T: ElementType  {
     fn target_field<F>(&self) -> Rc<F>;
 }

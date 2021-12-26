@@ -1,127 +1,81 @@
 use gmp::mpz::Mpz;
 use std::ops;
 use num_traits::{One, Zero};
-//use duplicate::duplicate;
 use crate::pbc::elements::traits::*;
 use std::ops::Neg;
 use std::rc::Rc;
 use super::ZrField;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Zr {
-    Zero(Mpz,  Option<Rc<ZrField>>),
-    One(Mpz,   Option<Rc<ZrField>>),
-    Other(Mpz,        Rc<ZrField>)
+pub struct Zr {
+    value: Mpz,
+    field: Rc<ZrField>
 }
 
-impl Element for Zr {
+impl Element<AtomicElement> for Zr {
     type FieldType = ZrField;
 
-    fn field(&self) -> Option<Rc<ZrField>> {
-        match self {
-            Zr::Zero(_, None)       => None,
-            Zr::One(_, None)        => None,
-            Zr::Zero(_, Some(f))    => Some(f.clone()),
-            Zr::One(_, Some(f))     => Some(f.clone()),
-            Zr::Other(_, f)         => Some(f.clone()),
-        }
+    fn field(&self) -> Rc<Self::FieldType> {
+        Rc::clone(&self.field)
     }
 
     fn double(&self) -> Self {
-        match self {
-            Zr::Zero(_, _)          => self.clone(),
-            Zr::One(e, Some(f))     => Zr::new(e * Mpz::from(2), f.clone()),
-            Zr::Other(e, f)         => Zr::new(e * Mpz::from(2), f.clone()),
-            _                       => panic!("unable to double"),
-        }
+        Zr::new(
+            self.value() * Mpz::from(2),
+            Rc::clone(&self.field)
+        )
     }
 
     fn halve(&self) -> Self {
-        match self {
-            Zr::Zero(_, _)          => self.clone(),
-            Zr::One(e, Some(f))     => Zr::new(e * &ZrField::two_inverse(f.as_ref()), f.clone()),
-            Zr::Other(e, f)         => Zr::new(e * &ZrField::two_inverse(f.as_ref()), f.clone()),
-            _                       => panic!("unable to double"),
-        }
+        Zr::new(
+            self.value() * &Self::FieldType::two_inverse(self.field.as_ref()),
+            Rc::clone(&self.field)
+        )
     }
 
     fn square(&self) -> Self {self * self }
 
     fn is_sqrt(&self) -> bool {
-        match self {
-            Zr::Zero(_, _) => true,
-            _              => self.legendre() == Mpz::one(),
+        if self.is_zero() {
+            true
+        } else {
+            self.legendre() == Mpz::one()
         }
     }
 
     fn sqrt(&self) -> Option<(Self,Self)> {
-        match self.field() {
-            None        => None,
-            Some(f)     => Zr::sqrt(f, self.value()),
-        }
+        Zr::sqrt(self.field(), self.value())
     }
 }
 
 impl Zr {
     pub fn new(value: Mpz, field: Rc<ZrField>) -> Zr {
         let value = value % field.order();
-        if value.is_zero() {
-            Zr::Zero(value, Some(field))
-        } else if value.is_one() {
-            Zr::One(value, Some(field))
-        } else {
-            Zr::Other(value, field)
+        Self {
+            value,
+            field
         }
     }
 
     pub fn value(&self) -> &Mpz {
-        match self {
-            Zr::Zero(v, _) => &v,
-            Zr::One(v, _)  => &v,
-            Zr::Other(v, _) => &v
-        }
+        &self.value
     }
 
     fn common_field(z1: &Zr, z2: &Zr) -> Option<Rc<ZrField>> {
-        match (z1, z2) {
-            (Zr::Zero(_,None), Zr::Zero(_,None))                 => None,
-            (Zr::Zero(_,Some(f1)), Zr::Zero(_,None))             => Some(f1.clone()),
-            (Zr::Zero(_,None), Zr::Zero(_,Some(f2)))             => Some(f2.clone()),
-
-            (Zr::Zero(_,None), Zr::One(_,None))                  => None,
-            (Zr::Zero(_,Some(f1)), Zr::One(_,None))              => Some(f1.clone()),
-            (Zr::Zero(_,None), Zr::One(_,Some(f2)))              => Some(f2.clone()),
-
-            (Zr::One(_,None),  Zr::Zero(_,None))                 => None,
-            (Zr::One(_,Some(f1)), Zr::Zero(_,None))              => Some(f1.clone()),
-            (Zr::One(_,None), Zr::Zero(_,Some(f2)))              => Some(f2.clone()),
-
-            (Zr::One(_,None),  Zr::One(_,None))                  => None,
-            (Zr::One(_,Some(f1)), Zr::One(_,None))               => Some(f1.clone()),
-            (Zr::One(_,None), Zr::One(_,Some(f2)))               => Some(f2.clone()),
-
-            (Zr::Zero(_,None), Zr::Other(_, f2))                 => Some(f2.clone()),
-            (Zr::Zero(_,Some(f1)), Zr::Other(_, f2)) if f1 == f2 => Some(f1.clone()),
-
-            (Zr::One(_,None),  Zr::Other(_, f2))                 => Some(f2.clone()),
-            (Zr::One(_,Some(f1)), Zr::Other(_, f2)) if f1 == f2  => Some(f1.clone()),
-
-            (Zr::Other(_, f1), Zr::Zero(_,None))                 => Some(f1.clone()),
-            (Zr::Other(_, f1), Zr::Zero(_,Some(f2))) if f1 == f2 => Some(f1.clone()),
-
-            (Zr::Other(_, f1), Zr::One(_,None))                  => Some(f1.clone()),
-            (Zr::Other(_, f1), Zr::One(_,Some(f2))) if f1 == f2  => Some(f1.clone()),
-
-            (Zr::Other(_, f1), Zr::Other(_, f2)) if f1 == f2     => Some(f1.clone()),
-            (_,_)                                                => None
+        if z1.field == z2.field {
+            Some(Rc::clone(&z1.field))
+        } else {
+            None
         }
     }
 
     pub fn legendre(&self) -> Mpz {
-        match self {
-            Zr::Zero(_,_)     => Mpz::from(0),
-            Zr::One(_,_)      => Mpz::from(1),
-            Zr::Other(e, f) => f.legendre(&e)
+        if self.is_zero() {
+            Mpz::from(0)
+        } else if self.is_one() {
+            Mpz::from(1)
+        } else {
+            self.field.legendre(&self.value())
         }
     }
 
@@ -185,23 +139,13 @@ impl Zr {
         }
     }
 }
-impl One for Zr {
-    fn one() -> Self { Zr::One(Mpz::from(1), None) } 
-    fn is_one(&self) -> bool {
-        match self {
-            Zr::One(_, _)  => true,
-            _           => false
-        }
-    }
+
+impl CanBeOne for Zr {
+    fn is_one(&self) -> bool { self.value.is_one() }
 }
-impl Zero for Zr {
-    fn zero() -> Self { Zr::One(Mpz::from(0), None) }
-    fn is_zero(&self) -> bool {
-        match self {
-            Zr::Zero(_, _) => true,
-            _           => false
-        }
-    }
+
+impl CanBeZero for Zr {
+    fn is_zero(&self) -> bool { self.value.is_zero() }
 }
 
 macro_rules! add_operators {
@@ -224,13 +168,8 @@ impl_op_ex!(/ |lhs:&Zr, rhs:&Zr | -> Zr {
 
 impl Neg for Zr {
     type Output = Zr;
-    fn neg(self) -> Self::Output {  
-        match self {
-            Zr::Zero(_, _)      => self.clone(),
-            Zr::One(_, Some(f)) => Zr::new(f.order() - Mpz::one(), f.clone()),
-            Zr::Other(e, f)     => Zr::new(f.order() - e, f),
-            _                   => panic!("unable to negate"),
-        }
+    fn neg(self) -> Self::Output {
+        Zr::new(self.field.order() - Mpz::one(), Rc::clone(&self.field))
     }
 }
 

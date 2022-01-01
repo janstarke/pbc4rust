@@ -11,6 +11,7 @@ pub struct ZrField {
 }
 
 impl Field<Zr, AtomicElement> for ZrField {
+    
     fn random_element(self: Rc<Self>) -> Zr {
         let mut rng1 = rand::thread_rng();
         let mut rng2 = RandState::new();
@@ -55,8 +56,10 @@ impl ZrField {
     }
 
     pub fn two(field: Rc<ZrField>)    -> Zr { Zr::new(Mpz::from(2), Rc::clone(&field)) }
-    
-    pub fn nqr(field: Rc<ZrField>) -> Zr {
+}
+
+impl HasNqr<Zr, AtomicElement> for ZrField {
+    fn nqr(field: Rc<ZrField>) -> Zr {
         loop {
             let res = ZrField::random_element(Rc::clone(&field));
             if ! res.is_zero() {

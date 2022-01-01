@@ -48,6 +48,15 @@ impl Element<AtomicElement> for Zr {
     }
 }
 
+
+impl<'b> Set<&'b Zr> for Zr {
+    fn set(mut self, other: &'b Self) -> Self {
+        assert_eq!(self.field(), other.field());
+        self.value = other.value.clone();
+        self
+    }
+}
+
 impl Zr {
     pub fn new(value: Mpz, field: Rc<ZrField>) -> Zr {
         let value = value % field.order();

@@ -101,6 +101,15 @@ impl Signed for Z {
     fn is_negative(&self) -> bool { self.value.lt(&Mpz::zero()) }
 }
 */
+
+impl<'b> Set<&'b Z> for Z {
+    fn set(mut self, other: &Self) -> Self {
+        assert_eq!(self.field(), other.field());
+        self.value = other.value.clone();
+        self
+    }
+}
+
 impl Element<AtomicElement> for Z {
     type FieldType = ZField;
 

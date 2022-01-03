@@ -1,4 +1,4 @@
-use gmp::mpz::Mpz;
+use gmp::mpz::{Mpz,ProbabPrimeResult};
 use super::Zr;
 use std::rc::Rc;
 use gmp::rand::RandState;
@@ -38,13 +38,14 @@ impl FiniteField<Zr, AtomicElement> for ZrField {
 
 impl ZrField {
     pub fn new(order: Mpz) -> ZrField {
+        assert_eq!(order.probab_prime(10), ProbabPrimeResult::Prime);
         let field = ZrField {
             order: order
         };
         field
     }
 
-    pub fn two_inverse(&self)         -> Mpz { self.inverse_of(&Mpz::from(2)) }
+    pub fn two_inverse(&self) -> Mpz { self.inverse_of(&Mpz::from(2)) }
 
     pub fn inverse_of(&self, value: &Mpz) -> Mpz {
         value.invert(self.order()).expect("unable to invert")

@@ -14,6 +14,8 @@ macro_rules! test_one {
                 let field = $field;
                 let a = $field_type::random_element(Rc::clone(&field));
                 let one:$elem_type $(< $($elem_param,)+ >)? = $field_type::one_element(field);
+
+                assert!(one.is_one());
                 assert_eq!(&a * &one, a);
                 assert_eq!(&one * &a, a);
             }
@@ -33,6 +35,7 @@ macro_rules! test_zero {
                 let field = $field;
                 let a = $field_type::random_element(Rc::clone(&field));
                 let zero:$elem_type $(< $($elem_param,)+ >)? = $field_type::zero_element(field);
+                assert!(zero.is_zero());
                 assert_eq!(&a + &zero, a);
                 assert_eq!(&zero + &a, a);
             }

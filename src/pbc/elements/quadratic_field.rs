@@ -53,7 +53,7 @@ where
     fn one_element(self: Rc<Self>) -> Quadratic<E, F> {
         Quadratic::new(
             Rc::clone(&self.target_field).one_element(),
-            Rc::clone(&self.target_field).one_element(),
+            Rc::clone(&self.target_field).zero_element(),
             Rc::clone(&self),
         )
     }

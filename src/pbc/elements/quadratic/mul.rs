@@ -4,15 +4,13 @@ use std::ops::Mul;
 macro_rules! implement_mul {
     ($lhs:tt, $rhs:tt) => {
         {
-            let mut e0 = $lhs.x.clone() + &$lhs.y;
-            let mut e1 = $rhs.x.clone() + &$rhs.y;
+            /* Implementation of the Karatsuba alorithm */
+            let e0 = $lhs.x.clone() + &$lhs.y;
+            let e1 = $rhs.x.clone() + &$rhs.y;
             let e2 = e0.clone() * &e1;
 
-            e0 = e0.set(&$lhs.x);
-            e0 = e0 * &$rhs.x;
-
-            e1 = e1.set(&$lhs.y);
-            e1 = e1 * &$rhs.y;
+            let e0 = $lhs.x.clone() * &$rhs.x;
+            let e1 = $lhs.y.clone() * &$rhs.y;
             
             let nqr = F::nqr($lhs.field().target_field());
 

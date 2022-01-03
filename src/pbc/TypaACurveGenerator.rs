@@ -44,10 +44,10 @@ impl TypeACurveGenerator {
     }
 
     pub fn generate(&self) -> CurveOptions {
-        let mut exp1 = 0;
-        let mut exp2 = 0;
-        let mut sign0 = 0;
-        let mut sign1 = 0;
+        let mut exp1;
+        let mut exp2;
+        let mut sign0;
+        let mut sign1;
         let mut h: Mpz;
 
         loop {
@@ -90,7 +90,7 @@ impl TypeACurveGenerator {
                 q.setbit(std::cmp::min(3, self.qbits - self.rbits - 4 + 1) as usize);
 
                 h = self.next_integer(&q) * Mpz::from(12);
-                q = (h * r) - Mpz::one();
+                q = (&h * &r) - Mpz::one();
                 if q.probab_prime(20) == ProbabPrimeResult::Prime {
                     return CurveOptions {
                         curve_type: CurveType::A,

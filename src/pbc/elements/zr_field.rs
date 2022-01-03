@@ -38,7 +38,7 @@ impl FiniteField<Zr, AtomicElement> for ZrField {
 
 impl ZrField {
     pub fn new(order: Mpz) -> ZrField {
-        assert_eq!(order.probab_prime(10), ProbabPrimeResult::Prime);
+        assert!(order.probab_prime(10) == ProbabPrimeResult::Prime);
         let field = ZrField {
             order: order
         };

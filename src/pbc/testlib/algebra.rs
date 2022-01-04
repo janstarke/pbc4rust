@@ -157,3 +157,26 @@ macro_rules! test_square_and_sqrt {
         });
     }
 }
+
+#[macro_export]
+macro_rules! test_nqr {
+    ($elem_type: ident $(< $( $elem_param: ty),+ >)?,
+     $field_type: ident $(< $( $field_param: ty),+ >)?,
+     $field:expr) => {
+        self::concat_idents!(test_name=test_nqr_for_, $elem_type $(, $(_, $elem_param, )+ )? {
+            #[allow(non_snake_case)]
+            #[test]
+            fn test_name() {
+                let field = $field;
+                let mut last_a = $field_type::zero_element(Rc::clone(&field));
+                for _ in 1..100 {
+                    let a = $field_type::nqr(Rc::clone(&field));
+                    assert_ne!(&a, &last_a);
+                    let x = a.square();
+                    assert_ne!(&a, &x);
+                    last_a = a;
+                }
+            }
+        });
+    }
+}

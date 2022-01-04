@@ -194,6 +194,7 @@ mod tests {
     use crate::test_double_and_halve;
     use crate::test_distributivity;
     use crate::test_square_and_sqrt;
+    use crate::test_nqr;
 
     fn field() -> Rc<ZrField> { Rc::new(ZrField::new(Mpz::from(ORDER))) }
     
@@ -206,4 +207,5 @@ mod tests {
     test_associativity!(Zr, add, ZrField, field());
     test_associativity!(Zr, mul, ZrField, field());
     test_distributivity!(Zr, add, mul, ZrField, field());
+    test_nqr!(Zr, ZrField, field());
 }

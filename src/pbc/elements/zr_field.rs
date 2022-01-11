@@ -4,10 +4,12 @@ use std::rc::Rc;
 use gmp::rand::RandState;
 use rand::*;
 use super::traits::*;
+use std::cell::RefCell;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct ZrField {
     order: Mpz,
+    nqr: Mpz
 }
 
 impl Field<Zr, AtomicElement> for ZrField {
@@ -39,9 +41,31 @@ impl FiniteField<Zr, AtomicElement> for ZrField {
 impl ZrField {
     pub fn new(order: Mpz) -> ZrField {
         assert!(order.probab_prime(10) == ProbabPrimeResult::Prime);
-        let field = ZrField {
-            order: order
+
+        let nqr = {
+            let tmp_field = Rc::new(ZrField {
+                order: order.clone(),
+                nqr: Mpz::zero()
+            });
+
+            let nqr;
+            loop {
+                let res = ZrField::random_element(Rc::clone(&tmp_field));
+                if ! (res.is_zero() || res.is_one()) {
+                    if ! res.is_sqrt() {
+                        nqr = res;
+                        break;
+                    }
+                }
+            }
+            nqr.value().clone()
         };
+
+        let field = ZrField {
+            order: order,
+            nqr: nqr
+        };
+        
         field
     }
 
@@ -56,18 +80,17 @@ impl ZrField {
         value.powm(&exp, self.order())
     }
 
-    pub fn two(field: Rc<ZrField>)    -> Zr { Zr::new(Mpz::from(2), Rc::clone(&field)) }
+    pub fn two(field: Rc<ZrField>) -> Zr { Zr::new(Mpz::from(2), Rc::clone(&field)) }
 }
 
 impl HasNqr<Zr, AtomicElement> for ZrField {
-    fn nqr(field: Rc<ZrField>) -> Zr {
-        loop {
-            let res = ZrField::random_element(Rc::clone(&field));
-            if ! res.is_zero() {
-                if ! res.is_sqrt() {
-                    return res;
-                }
-            }
-        }
+    fn nqr(field: Rc<Self>) -> Zr {
+        Zr::new(field.nqr.clone(), Rc::clone(&field))
+    }
+}
+
+impl PartialEq for ZrField {
+    fn eq(&self, other: &Self) -> bool {
+        self.order == other.order && self.nqr == other.nqr
     }
 }

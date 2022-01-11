@@ -168,14 +168,9 @@ macro_rules! test_nqr {
             #[test]
             fn test_name() {
                 let field = $field;
-                let mut last_a = $field_type::zero_element(Rc::clone(&field));
-                for _ in 1..100 {
-                    let a = $field_type::nqr(Rc::clone(&field));
-                    assert_ne!(&a, &last_a);
-                    let x = a.square();
-                    assert_ne!(&a, &x);
-                    last_a = a;
-                }
+                let a = $field_type::nqr(Rc::clone(&field));
+                let x = a.square();
+                assert_ne!(&a, &x);
             }
         });
     }

@@ -161,7 +161,7 @@ macro_rules! add_operators {
     ($($op:tt)+) => {
         $(
             impl_op_ex!($op |lhs:&Zr, rhs:&Zr | -> Zr {
-                let field = Zr::common_field(&lhs, &rhs).expect("unable to calculate");
+                let field = Zr::common_field(&lhs, &rhs).unwrap_or_else(|| panic!("unable to calculate, because fields for lhs and rhs are different (lhs ∈ {{0..{}, nqr={:?}}}, rhs ∈ {{0..{}, nqr={:?}}})", lhs.field.order(), ZrField::nqr(Rc::clone(&lhs.field)), rhs.field.order(), ZrField::nqr(Rc::clone(&rhs.field))));
                 Zr::new(lhs.value() $op rhs.value(), field)
             });
         )+
